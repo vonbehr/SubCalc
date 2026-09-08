@@ -2,7 +2,7 @@
     "name": "SubCalc",
     "rules": [
         {
-            "scope": "constant.other.date.calc",
+            "scope": "constant.other.date.calc, constant.other.time.calc",
             "foreground": "#e5c07b"
         },
         {

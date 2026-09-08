@@ -10,13 +10,18 @@ contexts:
       scope: punctuation.definition.comment.calc
       push: line_comment
 
-    - match: '\d{4}-\d{2}-\d{2}'
+    # ISO (2026-07-05), dotted day.month.year (5.7.2026, 05.07.26), or
+    # German day. Month year (5. Juni 2026) -- see engine/dates.py.
+    - match: '\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2}(\d{2})?|\d{1,2}\.\s*(?i:september|dezember|november|oktober|januar|februar|august|april|juli|juni|mrz|mai|jan|feb|apr|jun|jul|aug|sep|sept|okt|nov|dez)\s+\d{2,4}'
       scope: constant.other.date.calc
+
+    - match: '\d{1,2}:\d{2}(:\d{2})?'
+      scope: constant.other.time.calc
 
     - match: '\b(sqrt|abs|round|floor|ceil|min|max)\b(?=\s*\()'
       scope: support.function.calc
 
-    - match: '\b(total|sum|average|today)\b'
+    - match: '\b(total|sum|average|today|now)\b'
       scope: keyword.other.calc
 
     - match: '\b(of|in|as|to)\b'

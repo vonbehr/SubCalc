@@ -34,4 +34,11 @@ class DateValue:
     date: datetime.date
 
 
-Value = Union[float, Quantity, DateValue]
+@dataclass(frozen=True)
+class TimeValue:
+    """A time of day, produced by a time literal (``14:30``) or ``now``."""
+
+    time: datetime.time
+
+
+Value = Union[float, Quantity, DateValue, TimeValue]

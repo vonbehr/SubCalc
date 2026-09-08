@@ -16,9 +16,19 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the last blank line.
 - Units of measure with conversion (length, mass, time) and a static
   currency-conversion table, e.g. `5 km + 200 m`, `3 kg in lb`, `$5 + $3`.
-- `expr in unit` / `expr as unit` conversion and tagging.
+- `expr in unit` / `expr as unit` conversion and tagging, including
+  postfix currency symbols (`500$`) and a currency symbol as the
+  conversion target (`500$ in €`), not just prefix (`$500`) or a 3-letter
+  code (`500 USD`).
 - Date literals (`2024-01-01`), `today`, date + duration arithmetic, and
   `start to end` date differences.
+- Alternate date formats: dotted day.month.year with a 2- or 4-digit year
+  (`05.07.2026`, `5.7.2026`, `5.7.26`), and German day. Month year with a
+  full or abbreviated month name (`5. Juni 2026`).
+- Time-of-day literals (`14:30`, `14:30:15`), `now`, and time arithmetic
+  (`+`/`-` a duration, wrapping past midnight; `to` or `-` between two
+  times for a signed duration in hours) -- the same duration/quantity
+  machinery as dates, applied to a clock time instead of a calendar date.
 - Named line labels (`#name`), referenced later as `#name`, as an
   alternative to positional `lineN` references.
 - Configurable rounding mode (`half_even`, `half_up`, `floor`, `ceil`).

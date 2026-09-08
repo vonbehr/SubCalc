@@ -7,3 +7,13 @@ return_date
 departure to return_date
 
 today to departure
+
+// Same departure date, written the German way -- also 2026-09-20
+departure_de = 20. September 2026
+
+Flight boarding
+
+boarding = 07:15
+boarding - 45 min #checkin
+gate_closes = boarding - 10 min
+gate_closes to boarding

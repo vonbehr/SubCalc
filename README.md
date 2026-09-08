@@ -55,9 +55,17 @@ live in [`examples/`](examples).
   `5 km in miles`, `3 as USD`. Supported dimensions are length, mass, time,
   and currency (`$`, `€`, `£`, `¥`, or a 3-letter code like `USD`) — currency
   rates are a small static table, not fetched live.
-- **Dates**: `2024-01-01` is a date literal, `today` is the current date.
-  `date + N days`/`weeks` (and `- `) shift a date; `start to end` (or
-  `end - start`) is the difference in days.
+- **Dates**: a date literal can be written as ISO (`2024-01-01`), dotted
+  day.month.year — the European convention — with a 2- or 4-digit year
+  (`05.07.2026`, `5.7.2026`, `5.7.26`), or German day. Month year with a
+  full or abbreviated month name (`5. Juni 2026`, `5. Jun 2026`); `today` is
+  the current date. `date + N days`/`weeks` (and `- `) shift a date;
+  `start to end` (or `end - start`) is the difference in days.
+- **Times**: `14:30` or `14:30:15` is a time-of-day literal (24-hour
+  clock), `now` is the current time. `time + N min`/`hours`/`seconds` (and
+  `- `) shift a time, wrapping past midnight; `start to end` (or
+  `end - start`) is the difference, in hours — unlike dates, this doesn't
+  wrap, so an earlier end gives a negative duration.
 - **Comments**: `// ...` to end of line.
 - Any line that doesn't parse as a calculation (plain prose) simply shows no
   result — it's never treated as an error. A line that looks like an

@@ -21,20 +21,23 @@ from .parser import (
     LabelRef,
     LineRef,
     Node,
+    Now,
     Number,
     Percent,
     PercentOf,
+    TimeLiteral,
     Today,
     Unary,
     Var,
     parse_line,
 )
 from .parser import Quantity as QuantityLiteral
-from .values import DateValue, Quantity, Value
+from .values import DateValue, Quantity, TimeValue, Value
 
 _CONSTANTS: dict[str, float] = {"pi": math.pi, "e": math.e}
 
 _DAY_SECONDS = 86400.0
+_SECONDS_PER_DAY = 86400
 
 
 @dataclass
@@ -110,8 +113,14 @@ def eval_node(node: Node, env: Environment) -> Value:
     if isinstance(node, Today):
         return DateValue(datetime.date.today())
 
+    if isinstance(node, Now):
+        return TimeValue(datetime.datetime.now().time())
+
     if isinstance(node, DateLiteral):
         return DateValue(node.date)
+
+    if isinstance(node, TimeLiteral):
+        return TimeValue(node.time)
 
     if isinstance(node, Unary):
         return _eval_unary(node, env)
@@ -129,7 +138,7 @@ def eval_node(node: Node, env: Environment) -> Value:
         return _eval_convert_to(node, env)
 
     if isinstance(node, DateRange):
-        return _eval_date_range(node, env)
+        return _eval_range(node, env)
 
     if isinstance(node, FunctionCall):
         return _eval_function_call(node, env)
@@ -151,7 +160,7 @@ def _eval_unary(node: Unary, env: Environment) -> Value:
         return -value
     if isinstance(value, Quantity):
         return Quantity(-value.magnitude, value.dimension, value.unit)
-    raise EvalError("Cannot negate a date")
+    raise EvalError(f"Cannot negate a {_type_name(value)}")
 
 
 def _scale(value: Value, factor: float) -> Value:
@@ -160,7 +169,7 @@ def _scale(value: Value, factor: float) -> Value:
         return value * factor
     if isinstance(value, Quantity):
         return Quantity(value.magnitude * factor, value.dimension, value.unit)
-    raise EvalError("Cannot take a percentage of a date")
+    raise EvalError(f"Cannot take a percentage of a {_type_name(value)}")
 
 
 def _eval_percent_of(node: PercentOf, env: Environment) -> Value:
@@ -194,16 +203,36 @@ def _eval_convert_to(node: ConvertTo, env: Environment) -> Value:
         if value.dimension != dimension:
             raise EvalError(f"Cannot convert {value.dimension} to {dimension}")
         return Quantity(value.magnitude, dimension, node.unit)
-    raise EvalError("Cannot convert a date to a unit")
+    raise EvalError(f"Cannot convert a {_type_name(value)} to a unit")
 
 
-def _eval_date_range(node: DateRange, env: Environment) -> Value:
+def _time_seconds(value: datetime.time) -> float:
+    return value.hour * 3600 + value.minute * 60 + value.second
+
+
+def _time_diff_unit(seconds: float) -> str:
+    """Picks a readable display unit for a time-of-day difference.
+
+    Args:
+        seconds: The signed difference, in seconds.
+
+    Returns:
+        ``"minutes"`` for a difference under an hour, else ``"hours"`` --
+        e.g. a 10-minute gap reads as "10 minutes", not "0.166667 hours".
+    """
+    return "hours" if abs(seconds) >= 3600 else "minutes"
+
+
+def _eval_range(node: DateRange, env: Environment) -> Value:
     start = eval_node(node.start, env)
     end = eval_node(node.end, env)
-    if not isinstance(start, DateValue) or not isinstance(end, DateValue):
-        raise EvalError("'to' requires two dates")
-    days = (end.date - start.date).days
-    return Quantity(days * _DAY_SECONDS, "time", "days")
+    if isinstance(start, DateValue) and isinstance(end, DateValue):
+        days = (end.date - start.date).days
+        return Quantity(days * _DAY_SECONDS, "time", "days")
+    if isinstance(start, TimeValue) and isinstance(end, TimeValue):
+        seconds = _time_seconds(end.time) - _time_seconds(start.time)
+        return Quantity(seconds, "time", _time_diff_unit(seconds))
+    raise EvalError("'to' requires two dates or two times of day")
 
 
 def _eval_aggregate(node: Aggregate, env: Environment) -> Value:
@@ -263,7 +292,17 @@ def _type_name(value: Value) -> str:
         return value.dimension
     if isinstance(value, DateValue):
         return "date"
+    if isinstance(value, TimeValue):
+        return "time of day"
     return "number"
+
+
+def _time_from_seconds(total_seconds: float) -> datetime.time:
+    """Builds a wall-clock time from a seconds offset, wrapping past 24h."""
+    whole = int(round(total_seconds)) % _SECONDS_PER_DAY
+    hour, remainder = divmod(whole, 3600)
+    minute, second = divmod(remainder, 60)
+    return datetime.time(hour, minute, second)
 
 
 def _combine_quantities(
@@ -285,6 +324,12 @@ def _add(left: Value, right: Value) -> Value:
     if isinstance(right, DateValue) and isinstance(left, Quantity):
         if left.dimension == "time":
             return DateValue(right.date + datetime.timedelta(seconds=left.magnitude))
+    if isinstance(left, TimeValue) and isinstance(right, Quantity):
+        if right.dimension == "time":
+            return TimeValue(_time_from_seconds(_time_seconds(left.time) + right.magnitude))
+    if isinstance(right, TimeValue) and isinstance(left, Quantity):
+        if left.dimension == "time":
+            return TimeValue(_time_from_seconds(_time_seconds(right.time) + left.magnitude))
     raise EvalError(f"Cannot add {_type_name(left)} and {_type_name(right)}")
 
 
@@ -299,6 +344,12 @@ def _subtract(left: Value, right: Value) -> Value:
     if isinstance(left, DateValue) and isinstance(right, DateValue):
         days = (left.date - right.date).days
         return Quantity(days * _DAY_SECONDS, "time", "days")
+    if isinstance(left, TimeValue) and isinstance(right, Quantity):
+        if right.dimension == "time":
+            return TimeValue(_time_from_seconds(_time_seconds(left.time) - right.magnitude))
+    if isinstance(left, TimeValue) and isinstance(right, TimeValue):
+        seconds = _time_seconds(left.time) - _time_seconds(right.time)
+        return Quantity(seconds, "time", _time_diff_unit(seconds))
     raise EvalError(f"Cannot subtract {_type_name(right)} from {_type_name(left)}")
 
 

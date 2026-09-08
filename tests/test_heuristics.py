@@ -61,3 +61,28 @@ def test_unknown_character_is_flagged() -> None:
 
 def test_of_keyword_is_flagged() -> None:
     assert looks_like_calculation("20% of bacon") is True
+
+
+def test_isolated_invalid_date_is_flagged() -> None:
+    """A bare, otherwise-invalid date is worth flagging.
+
+    It's most likely a typo, e.g. day/month swapped.
+    """
+    assert looks_like_calculation("2026-13-05") is True
+
+
+def test_date_embedded_in_prose_is_not_flagged() -> None:
+    """A date mentioned in an ordinary sentence isn't a calculation.
+
+    Only an operator/keyword alongside it, or the date standing alone,
+    counts.
+    """
+    assert looks_like_calculation("Meeting on 2026-07-05 at the office") is False
+
+
+def test_time_embedded_in_prose_is_not_flagged() -> None:
+    assert looks_like_calculation("Call John at 15:00 about the budget") is False
+
+
+def test_date_with_operator_is_flagged() -> None:
+    assert looks_like_calculation("2026-01-01 + 30 days") is True

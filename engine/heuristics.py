@@ -7,6 +7,12 @@ heuristic exactly right is impossible in general (natural language and
 calculator syntax overlap too much), so it deliberately errs conservative:
 a bare number next to ordinary words ("5 apples") is not flagged, but any
 operator, keyword, or line/label reference is.
+
+A date or time literal is a weaker signal than an operator: on its own
+("2026-07-05", to catch a typo'd date) it counts, but a date or time
+embedded among ordinary prose words ("Meeting on 2026-07-05 at the
+office", "Call John at 15:00") does not, since that combination is far
+more often a sentence than a broken calculation.
 """
 
 from __future__ import annotations
@@ -21,6 +27,7 @@ _REFERENCE_WORDS = frozenset(
         "pi",
         "e",
         "today",
+        "now",
         "total",
         "sum",
         "average",
@@ -47,7 +54,8 @@ def looks_like_calculation(line: str) -> bool:
 
     Returns:
         True if the line contains an operator, a reserved keyword, a
-        line/label reference, a date literal, or an unparseable character.
+        line/label reference, an unparseable character, or an isolated
+        date/time literal (one with no other ordinary word on the line).
     """
     comment_start = line.find("//")
     code = line if comment_start == -1 else line[:comment_start]
@@ -59,9 +67,12 @@ def looks_like_calculation(line: str) -> bool:
     except TokenizeError:
         return True
 
+    has_date_or_time = False
+    has_stray_word = False
     for index, token in enumerate(tokens):
-        if token.type == "DATE":
-            return True
+        if token.type in ("DATE", "TIME"):
+            has_date_or_time = True
+            continue
         if token.type == "OP" and token.value == "#":
             # "#" only signals a label *reference* (e.g. "#subtotal") when
             # followed by a name; "#482" is far more often prose (an issue,
@@ -75,8 +86,10 @@ def looks_like_calculation(line: str) -> bool:
         if token.type == "IDENT":
             lowered = token.value.lower()
             if lowered in _KEYWORDS or lowered in _REFERENCE_WORDS:
-                return True
+                continue
             suffix = lowered[len(_LINE_REF_PREFIX) :]
             if lowered.startswith(_LINE_REF_PREFIX) and suffix.isdigit() and suffix:
-                return True
-    return False
+                continue
+            has_stray_word = True
+
+    return has_date_or_time and not has_stray_word

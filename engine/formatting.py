@@ -5,7 +5,7 @@ from __future__ import annotations
 import decimal
 
 from . import units
-from .values import DateValue, Quantity, Value
+from .values import DateValue, Quantity, TimeValue, Value
 
 _SCIENTIFIC_HIGH = 1e15
 _SCIENTIFIC_LOW = 1e-6
@@ -106,8 +106,8 @@ def format_value(
         rounding_mode: See :func:`format_number`.
 
     Returns:
-        The formatted string, e.g. ``"1,234.5"``, ``"5.2 km"``, or
-        ``"2024-06-01"``.
+        The formatted string, e.g. ``"1,234.5"``, ``"5.2 km"``,
+        ``"2024-06-01"``, or ``"14:30"``.
     """
     if isinstance(value, Quantity):
         display = value.magnitude / units.unit_factor(value.unit)
@@ -115,4 +115,7 @@ def format_value(
         return f"{number} {value.unit}"
     if isinstance(value, DateValue):
         return value.date.isoformat()
+    if isinstance(value, TimeValue):
+        pattern = "%H:%M" if value.time.second == 0 else "%H:%M:%S"
+        return value.time.strftime(pattern)
     return format_number(value, decimal_places, thousands_separator, rounding_mode)

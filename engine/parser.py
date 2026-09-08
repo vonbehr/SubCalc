@@ -13,7 +13,7 @@ Grammar (lowest to highest precedence)::
     percent    := power ("%")*
     power      := unary ("^" power)?
     unary      := "-" unary | primary
-    primary    := NUMBER unit_name? | DATE | CURRENCY NUMBER | "#" IDENT
+    primary    := NUMBER unit_name? | DATE | TIME | CURRENCY NUMBER | "#" IDENT
                 | IDENT "(" (additive ("," additive)*)? ")"
                 | IDENT | "(" additive ")"
     unit_name  := IDENT | CURRENCY   -- a unit word (e.g. "km") or a currency
@@ -38,14 +38,14 @@ import datetime
 from dataclasses import dataclass
 from typing import Union
 
-from . import units
+from . import dates, units
 from .errors import ParseError
 from .tokenizer import Token, tokenize
 
 _LINE_REF_PREFIX = "line"
 _FUNCTIONS = frozenset({"sqrt", "abs", "round", "floor", "ceil", "min", "max"})
 _AGGREGATE_KEYWORDS = frozenset({"total", "sum", "average"})
-_RESERVED_WORDS = _FUNCTIONS | _AGGREGATE_KEYWORDS | {"of", "in", "as", "to", "today"}
+_RESERVED_WORDS = _FUNCTIONS | _AGGREGATE_KEYWORDS | {"of", "in", "as", "to", "today", "now"}
 
 
 @dataclass(frozen=True)
@@ -82,10 +82,22 @@ class Today:
 
 
 @dataclass(frozen=True)
+class Now:
+    """The ``now`` keyword, evaluating to the current time of day."""
+
+
+@dataclass(frozen=True)
 class DateLiteral:
-    """An ISO ``YYYY-MM-DD`` date literal."""
+    """A date literal (ISO, dotted, or German -- see :mod:`engine.dates`)."""
 
     date: datetime.date
+
+
+@dataclass(frozen=True)
+class TimeLiteral:
+    """A ``HH:MM`` or ``HH:MM:SS`` time-of-day literal."""
+
+    time: datetime.time
 
 
 @dataclass(frozen=True)
@@ -181,7 +193,9 @@ Node = Union[
     LineRef,
     LabelRef,
     Today,
+    Now,
     DateLiteral,
+    TimeLiteral,
     Percent,
     PercentOf,
     Quantity,
@@ -372,6 +386,10 @@ class _Parser:
             self._advance()
             return DateLiteral(_parse_date_literal(token.value))
 
+        if token.type == "TIME":
+            self._advance()
+            return TimeLiteral(_parse_time_literal(token.value))
+
         if token.type == "OP" and token.value in units.CURRENCY_SYMBOLS:
             self._advance()
             number_token = self._peek()
@@ -392,13 +410,16 @@ class _Parser:
 
         if token.type == "IDENT":
             self._advance()
-            if token.value.lower() == "today":
+            lowered = token.value.lower()
+            if lowered == "today":
                 return Today()
+            if lowered == "now":
+                return Now()
             line_number = self._is_line_ref(token.value)
             if line_number is not None:
                 return LineRef(line_number)
-            if token.value.lower() in _FUNCTIONS and self._at_op("("):
-                return self._parse_function_call(token.value.lower())
+            if lowered in _FUNCTIONS and self._at_op("("):
+                return self._parse_function_call(lowered)
             return Var(token.value)
 
         if token.type == "OP" and token.value == "(":
@@ -462,7 +483,8 @@ def _parse_date_literal(text: str) -> datetime.date:
     """Converts a DATE token's raw text into a :class:`datetime.date`.
 
     Args:
-        text: The token's raw ``YYYY-MM-DD`` source text.
+        text: The token's raw source text, in any format
+            :func:`engine.dates.parse_date` accepts.
 
     Returns:
         The parsed date.
@@ -471,9 +493,27 @@ def _parse_date_literal(text: str) -> datetime.date:
         ParseError: If the text is not a valid calendar date.
     """
     try:
-        return datetime.date.fromisoformat(text)
+        return dates.parse_date(text)
     except ValueError as exc:
         raise ParseError(f"Invalid date {text!r}: {exc}") from exc
+
+
+def _parse_time_literal(text: str) -> datetime.time:
+    """Converts a TIME token's raw text into a :class:`datetime.time`.
+
+    Args:
+        text: The token's raw ``HH:MM`` or ``HH:MM:SS`` source text.
+
+    Returns:
+        The parsed time of day.
+
+    Raises:
+        ParseError: If the text is not a valid time of day (e.g. hour 25).
+    """
+    try:
+        return datetime.time.fromisoformat(text)
+    except ValueError as exc:
+        raise ParseError(f"Invalid time {text!r}: {exc}") from exc
 
 
 def parse(tokens: list[Token]) -> Node:
