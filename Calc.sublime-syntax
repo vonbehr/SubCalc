@@ -1,0 +1,37 @@
+%YAML 1.2
+---
+name: Calc
+file_extensions: [calc]
+scope: source.calc
+
+contexts:
+  main:
+    - match: '//'
+      scope: punctuation.definition.comment.calc
+      push: line_comment
+
+    - match: '\bof\b'
+      scope: keyword.operator.word.calc
+
+    - match: '\bline\d+\b'
+      scope: variable.language.calc
+
+    - match: '\d[\d,_]*(\.\d+)?'
+      scope: constant.numeric.calc
+
+    - match: '='
+      scope: keyword.operator.assignment.calc
+
+    - match: '[+\-*/^%]'
+      scope: keyword.operator.arithmetic.calc
+
+    - match: '[()]'
+      scope: punctuation.section.parens.calc
+
+    - match: '[A-Za-z_][A-Za-z0-9_]*'
+      scope: variable.other.calc
+
+  line_comment:
+    - meta_scope: comment.line.double-slash.calc
+    - match: $
+      pop: true

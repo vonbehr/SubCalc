@@ -1,0 +1,15 @@
+[
+    {
+        "id": "file",
+        "children": [
+            {
+                "caption": "-",
+                "id": "open"
+            },
+            {
+                "caption": "New Calculation",
+                "command": "subcalc_new"
+            }
+        ]
+    }
+]

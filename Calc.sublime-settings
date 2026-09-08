@@ -1,0 +1,13 @@
+{
+    // Maximum number of decimal places shown for computed results.
+    "decimal_places": 6,
+
+    // Whether large results are grouped with thousands separators.
+    "thousands_separator": true,
+
+    // Text inserted before each inline result.
+    "result_prefix": "  ⟶ ",
+
+    // Milliseconds to wait after an edit before recomputing results.
+    "debounce_ms": 150
+}
