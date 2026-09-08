@@ -13,6 +13,14 @@ A date or time literal is a weaker signal than an operator: on its own
 embedded among ordinary prose words ("Meeting on 2026-07-05 at the
 office", "Call John at 15:00") does not, since that combination is far
 more often a sentence than a broken calculation.
+
+A "-" flanked by letters on both sides with no space ("check-in",
+"well-being", "T-shirt") is treated as an English compound word, not a
+minus sign -- real subtraction is written with at least one space
+("rent - 100") or beside a digit ("-5"), essentially always. The one
+trade-off is a tightly-written variable subtraction like "a-b" now reads
+as prose too; that shape is rare enough next to how common hyphenated
+words are that it's the right default.
 """
 
 from __future__ import annotations
@@ -41,6 +49,23 @@ _REFERENCE_WORDS = frozenset(
     }
 )
 _LINE_REF_PREFIX = "line"
+
+
+def _is_word_hyphen(code: str, pos: int) -> bool:
+    """Checks whether the ``-`` at ``pos`` is a compound-word hyphen.
+
+    Args:
+        code: The line's code (comment already stripped).
+        pos: The zero-based offset of the ``-`` character within ``code``.
+
+    Returns:
+        True if the characters immediately before and after are both
+        letters with no space, the shape of a word like "check-in" rather
+        than a minus sign.
+    """
+    before = code[pos - 1] if pos > 0 else ""
+    after = code[pos + 1] if pos + 1 < len(code) else ""
+    return before.isalpha() and after.isalpha()
 
 
 def looks_like_calculation(line: str) -> bool:
@@ -80,6 +105,8 @@ def looks_like_calculation(line: str) -> bool:
             next_token = tokens[index + 1] if index + 1 < len(tokens) else None
             if next_token is not None and next_token.type == "IDENT":
                 return True
+            continue
+        if token.type == "OP" and token.value == "-" and _is_word_hyphen(code, token.pos):
             continue
         if token.type == "OP" and token.value in _OPERATOR_VALUES:
             return True

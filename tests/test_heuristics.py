@@ -86,3 +86,33 @@ def test_time_embedded_in_prose_is_not_flagged() -> None:
 
 def test_date_with_operator_is_flagged() -> None:
     assert looks_like_calculation("2026-01-01 + 30 days") is True
+
+
+def test_hyphenated_word_is_not_flagged() -> None:
+    """A '-' flanked by letters with no space is a compound word.
+
+    Not a minus sign, e.g. 'check-in'.
+    """
+    assert looks_like_calculation("Flight check-in") is False
+
+
+def test_hyphenated_word_variants_are_not_flagged() -> None:
+    assert looks_like_calculation("well-being") is False
+    assert looks_like_calculation("Buy a T-shirt") is False
+    assert looks_like_calculation("Keep up-to-date") is False
+
+
+def test_spaced_minus_is_still_flagged() -> None:
+    assert looks_like_calculation("rent - 100") is True
+
+
+def test_leading_minus_before_digit_is_still_flagged() -> None:
+    assert looks_like_calculation("-5 + 3") is True
+
+
+def test_minus_with_space_only_before_is_still_flagged() -> None:
+    """'total -typo' (space before, none after) isn't a compound word.
+
+    Only letter-hyphen-letter with no space on either side is.
+    """
+    assert looks_like_calculation("total -typo") is True

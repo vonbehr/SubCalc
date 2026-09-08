@@ -47,6 +47,14 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `CONTRIBUTING.md`, `CHANGELOG.md`, `ROADMAP.md`, and an `examples/`
   gallery of sample `.calc` files.
 
+### Fixed
+
+- The inline error indicator no longer flags ordinary sentences that
+  happen to contain a date, a clock time, or a hyphenated word ("Meeting
+  on 2026-07-05...", "Call John at 15:00...", "Flight check-in") --
+  these were false positives from the DATE/TIME token and the `-`
+  operator being treated as unconditional signals.
+
 ## [1.0.0] - 2026-09-08
 
 ### Added
