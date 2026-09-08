@@ -38,11 +38,34 @@ v1; the engine and integration pattern are built to extend to those later.
 
 ## Installing locally (not yet on Package Control)
 
-Symlink this repo into Sublime Text's Packages directory:
+Symlink this repo into Sublime Text's Packages directory.
+
+**macOS**
 
 ```sh
 ln -s "$(pwd)" "$HOME/Library/Application Support/Sublime Text/Packages/SubCalc"
 ```
+
+**Windows**
+
+Find your Packages directory via Sublime Text's **Preferences > Browse Packages…**
+(typically `%APPDATA%\Sublime Text\Packages`), then create the symlink from a
+PowerShell prompt running as Administrator:
+
+```powershell
+New-Item -ItemType SymbolicLink `
+    -Path "$env:APPDATA\Sublime Text\Packages\SubCalc" `
+    -Target "C:\path\to\this\repo"
+```
+
+Alternatively, from an Administrator Command Prompt:
+
+```bat
+mklink /D "%APPDATA%\Sublime Text\Packages\SubCalc" "C:\path\to\this\repo"
+```
+
+A symlink is required (rather than a plain copy) so that Sublime Text picks
+up further changes to this repo without reinstalling.
 
 Then, in Sublime Text, open the command palette and run
 **SubCalc: New Calculation** (or create/open any file with a `.calc`
