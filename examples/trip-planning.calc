@@ -8,7 +8,9 @@ departure to return_date
 
 today to departure
 
-// Same departure date, written the German way -- also 2026-09-20
+// Same departure date, written a few other ways -- all 2026-09-20
+departure_dotted = 20.09.2026
+departure_short_year = 20.9.26
 departure_de = 20. September 2026
 
 Flight boarding

@@ -11,3 +11,10 @@ Shipping weight
 Prices
 45 USD + 12.50 USD #subtotal
 #subtotal in EUR
+
+// A currency symbol works after the number too, and as a conversion target
+500$ #cash
+#cash in €
+
+// Live, real-time rates instead of this static table: enable
+// currency_live_rates in Calc.sublime-settings (off by default)

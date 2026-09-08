@@ -1,0 +1,25 @@
+Circle geometry
+
+radius = 5
+area = round(pi * radius^2, 2)
+circumference = round(2 * pi * radius, 2)
+
+Basic functions
+sqrt(144)
+abs(-42)
+floor(7.9)
+ceil(7.1)
+min(4, 9, 1, 7)
+max(4, 9, 1, 7)
+
+Scientific notation
+avogadro = 6.022e23
+avogadro / 1e23
+
+// A big result switches to scientific notation automatically
+2^100
+
+Implicit multiplication
+x = 4
+2(3 + 4)
+3x

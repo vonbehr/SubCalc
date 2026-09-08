@@ -16,8 +16,27 @@ line4 - 10%                                      ⟶ 1395
 20% of 1550                                      ⟶ 310
 ```
 
-More worked examples -- unit conversion, currency, dates, an invoice --
-live in [`examples/`](examples).
+A quick tour of the rest -- functions, units and currency, dates and
+times, and the `total` aggregate:
+
+```
+sqrt(2)                     ⟶ 1.414214
+round(pi * 2, 2)            ⟶ 6.28
+max(12, 7, 20)              ⟶ 20
+
+5 km + 200 m                ⟶ 5.2 km
+45 USD + 12.50 USD in EUR   ⟶ 62.5 EUR
+
+2026-01-01 to 2026-06-01    ⟶ 151 days
+14:30 + 90 min              ⟶ 16:00
+
+10                          ⟶ 10
+20                          ⟶ 20
+total                       ⟶ 30
+```
+
+More worked examples -- functions and math, unit conversion, currency,
+dates and times, an invoice -- live in [`examples/`](examples).
 
 ## Syntax
 
