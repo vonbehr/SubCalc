@@ -8,6 +8,11 @@
     // Text inserted before each inline result.
     "result_prefix": "  ⟶ ",
 
+    // How results are rounded when they don't fit exactly in
+    // decimal_places: "half_even" (banker's rounding, the default),
+    // "half_up", "floor", or "ceil".
+    "rounding_mode": "half_even",
+
     // Milliseconds to wait after an edit before recomputing results.
     "debounce_ms": 150
 }

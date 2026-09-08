@@ -11,5 +11,31 @@
                 "command": "subcalc_new"
             }
         ]
+    },
+    {
+        "id": "edit",
+        "children": [
+            {
+                "caption": "SubCalc",
+                "id": "subcalc",
+                "children": [
+                    {
+                        "caption": "Copy All Results",
+                        "command": "subcalc_copy_all_results"
+                    },
+                    {
+                        "caption": "Copy Last Result",
+                        "command": "subcalc_copy_last_result"
+                    },
+                    {
+                        "caption": "-"
+                    },
+                    {
+                        "caption": "Toggle Results",
+                        "command": "subcalc_toggle_results"
+                    }
+                ]
+            }
+        ]
     }
 ]

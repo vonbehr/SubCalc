@@ -1,0 +1,17 @@
+Monthly budget
+
+rent = 1200
+groceries = 350
+utilities = 180
+rent + groceries + utilities #fixed_costs
+
+Fun money
+fun_money = 200
+fun_money - 15%          // 15% cut for savings
+
+Weekend groceries
+4.50
+2.25
+6.00
+1.75
+total

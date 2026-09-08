@@ -1,0 +1,9 @@
+Trip planning
+
+departure = 2026-09-20
+return_date = departure + 10 days
+return_date
+
+departure to return_date
+
+today to departure

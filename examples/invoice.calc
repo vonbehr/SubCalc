@@ -1,0 +1,9 @@
+Invoice
+
+subtotal = 128.50 + 64.00 + 19.99
+tax_rate = 8.25%
+tax = round(subtotal * tax_rate, 2)
+subtotal + tax #total_due
+
+// Rush shipping surcharge: min $5, or 2% of the subtotal
+max(5, subtotal * 2%)

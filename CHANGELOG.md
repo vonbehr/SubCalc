@@ -1,0 +1,47 @@
+# Changelog
+
+All notable changes to this project are documented here. The format
+follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Added
+
+- Built-in functions: `sqrt`, `abs`, `round`, `floor`, `ceil`, `min`, `max`.
+- Constants `pi` and `e`.
+- Scientific notation, both as input (`1e6`, `2.5e-3`) and as output for
+  very large or very small results.
+- Implicit multiplication: `2(3 + 4)` and `3x`.
+- `total` / `sum` / `average` aggregate lines, summarizing the block since
+  the last blank line.
+- Units of measure with conversion (length, mass, time) and a static
+  currency-conversion table, e.g. `5 km + 200 m`, `3 kg in lb`, `$5 + $3`.
+- `expr in unit` / `expr as unit` conversion and tagging.
+- Date literals (`2024-01-01`), `today`, date + duration arithmetic, and
+  `start to end` date differences.
+- Named line labels (`#name`), referenced later as `#name`, as an
+  alternative to positional `lineN` references.
+- Configurable rounding mode (`half_even`, `half_up`, `floor`, `ceil`).
+- An inline error indicator for lines that look like an attempted
+  calculation but fail to evaluate.
+- A hover popup showing a variable's, label's, or line's current value.
+- Autocomplete for variables, labels, line references, functions, and
+  keywords.
+- Commands to copy all results or just the last result to the clipboard.
+- A status-bar total/average for the currently selected lines.
+- A per-view command to toggle result phantoms on/off.
+- Richer syntax highlighting and a bundled color-scheme overlay.
+- Windows install instructions in the README.
+- CI (GitHub Actions) running the test suite and ruff/mypy on every push
+  and pull request; a pre-commit config for the same checks locally.
+- `CONTRIBUTING.md`, `CHANGELOG.md`, `ROADMAP.md`, and an `examples/`
+  gallery of sample `.calc` files.
+
+## [1.0.0] - 2026-09-08
+
+### Added
+
+- Initial release: live inline per-line calculation for `.calc` files.
+- Arithmetic (`+ - * / ^ ()`), variables, `lineN` references, and the
+  percent semantics described in the README.
+- `SubCalc: New Calculation` command and `.calc` syntax highlighting.

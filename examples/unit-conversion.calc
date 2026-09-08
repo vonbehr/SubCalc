@@ -1,0 +1,13 @@
+Home renovation
+
+room_length = 5 m
+room_width = 4 m
+2 * (room_length + room_width) in ft #perimeter
+
+Shipping weight
+3 kg + 500 g #package_weight
+#package_weight in lb
+
+Prices
+45 USD + 12.50 USD #subtotal
+#subtotal in EUR

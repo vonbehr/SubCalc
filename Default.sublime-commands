@@ -2,5 +2,17 @@
     {
         "caption": "SubCalc: New Calculation",
         "command": "subcalc_new"
+    },
+    {
+        "caption": "SubCalc: Copy All Results",
+        "command": "subcalc_copy_all_results"
+    },
+    {
+        "caption": "SubCalc: Copy Last Result",
+        "command": "subcalc_copy_last_result"
+    },
+    {
+        "caption": "SubCalc: Toggle Results",
+        "command": "subcalc_toggle_results"
     }
 ]

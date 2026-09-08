@@ -1,2 +1,29 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 95
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP", "B", "I", "D"]
+ignore = ["D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D103", "D104"]
+"conftest.py" = ["D100"]
+
+# mypy itself no longer supports checking against python_version < 3.10, so
+# this is newer than the actual runtime target (Python 3.8, the Sublime Text
+# plugin host -- see .python-version and `target-version` above, which ruff
+# enforces for real). Runtime-evaluated type aliases still use typing.Union
+# rather than `X | Y` throughout the engine to stay 3.8-compatible.
+[tool.mypy]
+python_version = "3.10"
+files = ["engine"]
+strict = true
+disallow_untyped_defs = true
+warn_unused_ignores = true

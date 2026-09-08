@@ -8,15 +8,14 @@ from dataclasses import dataclass
 from .errors import TokenizeError
 
 _TOKEN_SPEC = [
-    ("NUMBER", r"\d[\d,_]*(?:\.\d+)?"),
+    ("DATE", r"\d{4}-\d{2}-\d{2}"),
+    ("NUMBER", r"\d[\d_]*(?:,\d[\d_]*)*(?:\.\d+)?(?:[eE][+-]?\d+)?"),
     ("IDENT", r"[A-Za-z_][A-Za-z0-9_]*"),
-    ("OP", r"[+\-*/^()=%]"),
+    ("OP", r"[+\-*/^()=%#,$€£¥]"),
     ("WHITESPACE", r"[ \t]+"),
     ("MISMATCH", r"."),
 ]
-_TOKEN_RE = re.compile(
-    "|".join(f"(?P<{name}>{pattern})" for name, pattern in _TOKEN_SPEC)
-)
+_TOKEN_RE = re.compile("|".join(f"(?P<{name}>{pattern})" for name, pattern in _TOKEN_SPEC))
 
 
 @dataclass(frozen=True)
@@ -24,7 +23,8 @@ class Token:
     """A single lexical token.
 
     Attributes:
-        type: One of ``"NUMBER"``, ``"IDENT"``, ``"OP"``, or ``"EOF"``.
+        type: One of ``"NUMBER"``, ``"DATE"``, ``"IDENT"``, ``"OP"``, or
+            ``"EOF"``.
         value: The raw source text the token was matched from.
         pos: The zero-based column offset the token starts at, used for
             error messages.
@@ -55,6 +55,7 @@ def tokenize(line: str) -> list[Token]:
     tokens: list[Token] = []
     for match in _TOKEN_RE.finditer(code):
         kind = match.lastgroup
+        assert kind is not None  # every alternative above is a named group
         if kind == "WHITESPACE":
             continue
         if kind == "MISMATCH":

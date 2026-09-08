@@ -1,0 +1,36 @@
+{
+    "name": "SubCalc",
+    "rules": [
+        {
+            "scope": "constant.other.date.calc",
+            "foreground": "#e5c07b"
+        },
+        {
+            "scope": "support.function.calc",
+            "foreground": "#61afef",
+            "font_style": "bold"
+        },
+        {
+            "scope": "keyword.other.calc, keyword.operator.word.calc",
+            "foreground": "#c678dd"
+        },
+        {
+            "scope": "constant.language.calc",
+            "foreground": "#d19a66"
+        },
+        {
+            "scope": "variable.other.label.calc",
+            "foreground": "#56b6c2",
+            "font_style": "italic"
+        },
+        {
+            "scope": "variable.other.assignment.calc",
+            "foreground": "#e06c75",
+            "font_style": "bold"
+        },
+        {
+            "scope": "keyword.operator.unit.calc",
+            "foreground": "#98c379"
+        }
+    ]
+}

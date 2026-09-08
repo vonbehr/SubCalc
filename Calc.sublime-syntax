@@ -10,14 +10,35 @@ contexts:
       scope: punctuation.definition.comment.calc
       push: line_comment
 
-    - match: '\bof\b'
+    - match: '\d{4}-\d{2}-\d{2}'
+      scope: constant.other.date.calc
+
+    - match: '\b(sqrt|abs|round|floor|ceil|min|max)\b(?=\s*\()'
+      scope: support.function.calc
+
+    - match: '\b(total|sum|average|today)\b'
+      scope: keyword.other.calc
+
+    - match: '\b(of|in|as|to)\b'
       scope: keyword.operator.word.calc
+
+    - match: '\b(pi|e)\b'
+      scope: constant.language.calc
 
     - match: '\bline\d+\b'
       scope: variable.language.calc
 
-    - match: '\d[\d,_]*(\.\d+)?'
+    - match: '#[A-Za-z_][A-Za-z0-9_]*'
+      scope: variable.other.label.calc
+
+    - match: '[$€£¥]'
+      scope: keyword.operator.unit.calc
+
+    - match: '\d[\d,_]*(\.\d+)?([eE][+-]?\d+)?'
       scope: constant.numeric.calc
+
+    - match: '\b[A-Za-z_][A-Za-z0-9_]*\b(?=\s*=(?!=))'
+      scope: variable.other.assignment.calc
 
     - match: '='
       scope: keyword.operator.assignment.calc
@@ -27,6 +48,9 @@ contexts:
 
     - match: '[()]'
       scope: punctuation.section.parens.calc
+
+    - match: ','
+      scope: punctuation.separator.calc
 
     - match: '[A-Za-z_][A-Za-z0-9_]*'
       scope: variable.other.calc

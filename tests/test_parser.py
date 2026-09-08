@@ -48,9 +48,9 @@ def test_line_reference() -> None:
 
 
 def test_plain_identifier_is_a_variable() -> None:
-    """An identifier that isn't a lineN reference parses as a Var."""
-    node = parse_line("total")
-    assert node == Var("total")
+    """A non-reserved identifier (not lineN, total/sum/average, ...) is a Var."""
+    node = parse_line("widgets")
+    assert node == Var("widgets")
 
 
 def test_percent_of() -> None:
