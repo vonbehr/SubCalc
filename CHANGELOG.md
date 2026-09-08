@@ -3,10 +3,16 @@
 All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.0.0] - 2026-09-08
+
+First public release, submitted to Package Control.
 
 ### Added
 
+- Live, per-line calculation for `.calc` files: arithmetic
+  (`+ - * / ^ ()`), variables, `lineN` references, and the percent
+  semantics described in the README.
+- `SubCalc: New Calculation` command and `.calc` syntax highlighting.
 - Built-in functions: `sqrt`, `abs`, `round`, `floor`, `ceil`, `min`, `max`.
 - Constants `pi` and `e`.
 - Scientific notation, both as input (`1e6`, `2.5e-3`) and as output for
@@ -61,12 +67,3 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   on 2026-07-05...", "Call John at 15:00...", "Flight check-in") --
   these were false positives from the DATE/TIME token and the `-`
   operator being treated as unconditional signals.
-
-## [1.0.0] - 2026-09-08
-
-### Added
-
-- Initial release: live inline per-line calculation for `.calc` files.
-- Arithmetic (`+ - * / ^ ()`), variables, `lineN` references, and the
-  percent semantics described in the README.
-- `SubCalc: New Calculation` command and `.calc` syntax highlighting.
