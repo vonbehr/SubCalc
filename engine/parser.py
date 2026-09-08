@@ -5,7 +5,7 @@ Grammar (lowest to highest precedence)::
     line       := (IDENT "=" conversion | conversion) ("#" IDENT)?
                 | keyword_line
     keyword_line := ("total" | "sum" | "average")   -- the entire line
-    conversion := to_expr (("in" | "as") IDENT)?
+    conversion := to_expr (("in" | "as") unit_name)?
     to_expr    := additive ("to" additive)?
     additive   := multiplicative (("+" | "-") multiplicative)*
     multiplicative := of_term (("*" | "/") of_term | implicit_factor)*
@@ -13,9 +13,11 @@ Grammar (lowest to highest precedence)::
     percent    := power ("%")*
     power      := unary ("^" power)?
     unary      := "-" unary | primary
-    primary    := NUMBER unit? | DATE | CURRENCY NUMBER | "#" IDENT
+    primary    := NUMBER unit_name? | DATE | CURRENCY NUMBER | "#" IDENT
                 | IDENT "(" (additive ("," additive)*)? ")"
                 | IDENT | "(" additive ")"
+    unit_name  := IDENT | CURRENCY   -- a unit word (e.g. "km") or a currency
+                                        symbol (e.g. "€"), pre- or postfix
 
 ``of`` is only consumed as the "of" keyword when the left-hand side is a
 percentage; otherwise it is left for the caller, which then fails to find a
@@ -271,12 +273,18 @@ class _Parser:
         left = self._parse_to()
         if self._at_keyword("in") or self._at_keyword("as"):
             self._advance()
-            unit_token = self._peek()
-            if unit_token.type != "IDENT":
-                raise ParseError(f"Expected a unit name at position {unit_token.pos}")
-            self._advance()
-            return ConvertTo(left, unit_token.value)
+            unit = self._expect_unit_name()
+            return ConvertTo(left, unit)
         return left
+
+    def _expect_unit_name(self) -> str:
+        token = self._peek()
+        if token.type == "IDENT" or (
+            token.type == "OP" and token.value in units.CURRENCY_SYMBOLS
+        ):
+            self._advance()
+            return token.value
+        raise ParseError(f"Expected a unit name at position {token.pos}")
 
     def _parse_to(self) -> Node:
         left = self._parse_additive()
@@ -406,6 +414,9 @@ class _Parser:
     def _maybe_attach_unit(self, node: Number) -> Node:
         token = self._peek()
         if token.type == "IDENT" and units.lookup_unit(token.value) is not None:
+            self._advance()
+            return Quantity(node, token.value)
+        if token.type == "OP" and token.value in units.CURRENCY_SYMBOLS:
             self._advance()
             return Quantity(node, token.value)
         return node

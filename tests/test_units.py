@@ -56,11 +56,28 @@ def test_currency_code_suffix() -> None:
     assert result.dimension == "currency"
 
 
+def test_currency_symbol_postfix() -> None:
+    """'500$' (symbol after the number) works the same as '$500'."""
+    result = _eval("500$")
+    assert isinstance(result, Quantity)
+    assert result.dimension == "currency"
+    assert result.unit == "$"
+    assert result.magnitude == pytest.approx(500)
+
+
 def test_convert_with_in_keyword() -> None:
     result = _eval("1 km in m")
     assert isinstance(result, Quantity)
     assert result.unit == "m"
     assert result.magnitude == pytest.approx(1000)
+
+
+def test_convert_to_a_currency_symbol() -> None:
+    """The 'in'/'as' target can be a currency symbol, not just a code."""
+    result = _eval("500$ in €")
+    assert isinstance(result, Quantity)
+    assert result.unit == "€"
+    assert result.magnitude == pytest.approx(500)  # base (USD) magnitude unchanged
 
 
 def test_convert_with_as_keyword() -> None:
