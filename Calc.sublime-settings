@@ -14,5 +14,24 @@
     "rounding_mode": "half_even",
 
     // Milliseconds to wait after an edit before recomputing results.
-    "debounce_ms": 150
+    "debounce_ms": 150,
+
+    // Whether to fetch live currency exchange rates in the background
+    // (from currency_api_url, at most once every currency_cache_minutes)
+    // instead of always using the static built-in table. Off by default:
+    // this is the only setting that makes SubCalc access the network, and
+    // only ever to fetch aggregate exchange rates, never anything from
+    // your files. Run "SubCalc: Refresh Currency Rates" to fetch once
+    // regardless of this setting.
+    "currency_live_rates": false,
+
+    // The exchange-rate API to fetch from when currency_live_rates is on.
+    // Must return JSON shaped like Frankfurter's (https://frankfurter.dev),
+    // i.e. {"rates": {"EUR": 0.92, "GBP": 0.79, ...}} expressed relative
+    // to USD.
+    "currency_api_url": "https://api.frankfurter.app/latest?from=USD",
+
+    // How long fetched currency rates stay fresh before they're
+    // refetched.
+    "currency_cache_minutes": 60
 }

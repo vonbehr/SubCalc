@@ -54,7 +54,8 @@ live in [`examples/`](examples).
   `5 km + 200 m` is `5.2 km`. Convert or tag explicitly with `in`/`as`:
   `5 km in miles`, `3 as USD`. Supported dimensions are length, mass, time,
   and currency (`$`, `€`, `£`, `¥`, or a 3-letter code like `USD`) — currency
-  rates are a small static table, not fetched live.
+  rates come from a small static table by default, or optionally a live
+  lookup (off by default; see **Live currency rates** below).
 - **Dates**: a date literal can be written as ISO (`2024-01-01`), dotted
   day.month.year — the European convention — with a 2- or 4-digit year
   (`05.07.2026`, `5.7.2026`, `5.7.26`), or German day. Month year with a
@@ -84,11 +85,37 @@ Available from the command palette (and `Edit > SubCalc` in the menu):
   buffer's computed results to the clipboard.
 - **SubCalc: Toggle Results** — hides or shows inline result phantoms for
   the current view.
+- **SubCalc: Refresh Currency Rates** — fetches live exchange rates now
+  (see **Live currency rates** below); works even if that setting is off.
 
 Hovering a variable, `#label`, or `lineN` shows a popup with its current
 value, and they're all offered as autocomplete suggestions, alongside
 function and keyword names. Selecting more than one line's worth of text
 shows that selection's total and average in the status bar.
+
+## Live currency rates (optional)
+
+By default, currency conversion (`$5 in EUR`, etc.) uses a small static
+table baked into the package, which only gets updated when the package
+does. Setting `"currency_live_rates": true` in `Calc.sublime-settings`
+switches to real exchange rates instead: SubCalc fetches them in the
+background from [Frankfurter](https://frankfurter.dev) (a free,
+no-API-key service backed by European Central Bank reference rates),
+caching the result for `currency_cache_minutes` (an hour, by default)
+before fetching again.
+
+This is the *only* thing in SubCalc that touches the network, it's off
+unless you turn it on, and it only ever requests exchange rates — never
+anything from your files. A fetch never blocks typing: it runs in the
+background, and until it completes (or if it fails, e.g. you're offline)
+SubCalc keeps using the last rates it has, static or previously fetched.
+Run **SubCalc: Refresh Currency Rates** any time to fetch immediately,
+regardless of the setting.
+
+`currency_api_url` points at a different endpoint if you'd rather use
+another provider or self-host one — it just needs to return JSON shaped
+like `{"rates": {"EUR": 0.92, "GBP": 0.79, ...}}`, expressed relative to
+USD.
 
 ## Installing locally (not yet on Package Control)
 
@@ -128,7 +155,8 @@ extension).
 Settings (`Calc.sublime-settings`, accessible via
 **Preferences > Package Settings**) let you tune the decimal precision,
 thousands-separator grouping, result prefix, rounding mode
-(`half_even`/`half_up`/`floor`/`ceil`), and debounce delay.
+(`half_even`/`half_up`/`floor`/`ceil`), debounce delay, and live currency
+rates (see above).
 
 ## Development
 

@@ -2,11 +2,14 @@
 
 Every table maps a unit name or symbol to the factor that converts one of
 that unit into the dimension's base unit (meters, grams, seconds, or US
-dollars). Currency rates are a fixed, approximate snapshot -- not fetched
-live -- since the calculation engine has no network access.
+dollars). Currency lookups prefer a live rate from
+:mod:`engine.currency_rates` when one has been fetched (opt-in, see that
+module), falling back to the static, approximate snapshot below.
 """
 
 from __future__ import annotations
+
+from . import currency_rates
 
 _LENGTH_M: dict[str, float] = {
     "mm": 0.001,
@@ -83,31 +86,39 @@ _TIME_S: dict[str, float] = {
     "weeks": 604800.0,
 }
 
-# Static, approximate rates relative to USD. Not fetched live -- see the
-# module docstring.
-_CURRENCY_USD: dict[str, float] = {
-    "usd": 1.0,
-    "$": 1.0,
-    "eur": 0.92,
-    "€": 0.92,
-    "gbp": 0.79,
-    "£": 0.79,
-    "jpy": 149.0,
-    "¥": 149.0,
-    "chf": 0.88,
-    "cad": 1.36,
-    "aud": 1.52,
+# Static, approximate rates relative to USD -- the fallback when no live
+# rate has been fetched (see the module docstring).
+_CURRENCY_CODES: dict[str, float] = {
+    "USD": 1.0,
+    "EUR": 0.92,
+    "GBP": 0.79,
+    "JPY": 149.0,
+    "CHF": 0.88,
+    "CAD": 1.36,
+    "AUD": 1.52,
 }
+
+#: Symbols that may prefix a number directly, e.g. ``$5``, mapped to the
+#: ISO code a live rate would be keyed by.
+_CURRENCY_SYMBOL_CODES: dict[str, str] = {"$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY"}
+CURRENCY_SYMBOLS = frozenset(_CURRENCY_SYMBOL_CODES)
 
 _DIMENSIONS: dict[str, dict[str, float]] = {
     "length": _LENGTH_M,
     "mass": _MASS_G,
     "time": _TIME_S,
-    "currency": _CURRENCY_USD,
 }
 
-#: Symbols that may prefix a number directly, e.g. ``$5``.
-CURRENCY_SYMBOLS = frozenset({"$", "€", "£", "¥"})
+
+def _lookup_currency(name: str) -> tuple[str, float] | None:
+    code = _CURRENCY_SYMBOL_CODES.get(name)
+    if code is None:
+        code = name.upper()
+        if code not in _CURRENCY_CODES:
+            return None
+    live_rate = currency_rates.get_live_rate(code)
+    factor = live_rate if live_rate is not None else _CURRENCY_CODES[code]
+    return "currency", factor
 
 
 def lookup_unit(name: str) -> tuple[str, float] | None:
@@ -122,12 +133,12 @@ def lookup_unit(name: str) -> tuple[str, float] | None:
         this unit into the dimension's base unit, or ``None`` if ``name``
         is not a recognized unit or currency.
     """
-    key = name if name in CURRENCY_SYMBOLS else name.lower()
+    key = name.lower()
     for dimension, table in _DIMENSIONS.items():
         factor = table.get(key)
         if factor is not None:
             return dimension, factor
-    return None
+    return _lookup_currency(name)
 
 
 def unit_factor(name: str) -> float:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import sublime
 import sublime_plugin
 
+from .engine import currency_rates
 from .engine.evaluator import LineOutcome, evaluate_buffer_with_env
 from .engine.formatting import format_number, format_value
 from .engine.heuristics import looks_like_calculation
@@ -21,11 +22,15 @@ _SETTINGS_FILE = "Calc.sublime-settings"
 _HIDDEN_SETTING = "subcalc_hidden"
 
 _FUNCTION_NAMES = ("sqrt", "abs", "round", "floor", "ceil", "min", "max")
-_KEYWORD_NAMES = ("total", "sum", "average", "today", "of", "in", "as", "to", "pi", "e")
+_KEYWORD_NAMES = ("total", "sum", "average", "today", "now", "of", "in", "as", "to", "pi", "e")
 
 #: Live listener instances, keyed by view id, so commands (copy, toggle) can
 #: reach the listener for the view they were run on without a global scan.
 _listeners: dict[int, SubcalcListener] = {}
+
+#: Guards against scheduling more than one background currency-rate fetch
+#: at a time (e.g. several Calc views going stale together).
+_currency_refresh_in_flight = False
 
 
 def _display_settings() -> tuple[int, bool, str]:
@@ -42,9 +47,66 @@ def _display_settings() -> tuple[int, bool, str]:
     )
 
 
+def _currency_settings() -> tuple[bool, str, float]:
+    """Reads the live-currency-rate settings.
+
+    Returns:
+        A ``(enabled, api_url, cache_minutes)`` tuple.
+    """
+    settings = sublime.load_settings(_SETTINGS_FILE)
+    return (
+        settings.get("currency_live_rates", False),
+        settings.get("currency_api_url", currency_rates.DEFAULT_API_URL),
+        settings.get("currency_cache_minutes", 60),
+    )
+
+
 def _buffer_lines(view: sublime.View) -> list[str]:
     """Reads every line of ``view`` as plain text, without trailing newlines."""
     return [view.substr(region) for region in view.lines(sublime.Region(0, view.size()))]
+
+
+def _perform_currency_refresh(api_url: str, announce: bool) -> None:
+    """Fetches live currency rates and refreshes open Calc views on success.
+
+    Makes a blocking network request, so this must only be called from a
+    background thread (e.g. via ``sublime.set_timeout_async``).
+
+    Args:
+        api_url: The rates endpoint to fetch.
+        announce: Whether to show a status-bar message with the outcome --
+            on for an explicit user-triggered refresh, off for the
+            automatic background one, which should stay unobtrusive.
+    """
+    success = currency_rates.refresh(api_url)
+    if success:
+        for listener in list(_listeners.values()):
+            listener.refresh()
+        if announce:
+            sublime.status_message("SubCalc: currency rates updated")
+    elif announce:
+        error = currency_rates.last_error() or "unknown error"
+        sublime.status_message(f"SubCalc: currency rate fetch failed ({error})")
+
+
+def _maybe_refresh_currency_rates() -> None:
+    """Kicks off a background currency-rate fetch if due, at most one at a time."""
+    global _currency_refresh_in_flight
+    enabled, api_url, cache_minutes = _currency_settings()
+    if not enabled or _currency_refresh_in_flight:
+        return
+    if not currency_rates.is_stale(cache_minutes):
+        return
+
+    def _run() -> None:
+        global _currency_refresh_in_flight
+        try:
+            _perform_currency_refresh(api_url, announce=False)
+        finally:
+            _currency_refresh_in_flight = False
+
+    _currency_refresh_in_flight = True
+    sublime.set_timeout_async(_run, 0)
 
 
 class SubcalcListener(sublime_plugin.ViewEventListener):
@@ -116,6 +178,7 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
         self._outcomes, env = evaluate_buffer_with_env(lines)
         self._variables = env.variables
         self._labels = env.labels
+        _maybe_refresh_currency_rates()
 
         if view.settings().get(_HIDDEN_SETTING, False):
             self._result_phantoms.update([])
@@ -335,3 +398,17 @@ class SubcalcToggleResultsCommand(sublime_plugin.TextCommand):
         listener = _listeners.get(self.view.id())
         if listener is not None:
             listener.refresh()
+
+
+class SubcalcRefreshCurrencyRatesCommand(sublime_plugin.WindowCommand):
+    """Manually fetches live currency rates now.
+
+    Works regardless of the ``currency_live_rates`` setting, which only
+    gates the automatic background refresh.
+    """
+
+    def run(self) -> None:
+        """Kicks off a background fetch and reports the outcome."""
+        _, api_url, _ = _currency_settings()
+        sublime.status_message("SubCalc: fetching currency rates…")
+        sublime.set_timeout_async(lambda: _perform_currency_refresh(api_url, announce=True), 0)

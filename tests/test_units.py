@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from engine import currency_rates, units
 from engine.errors import EvalError
 from engine.evaluator import Environment, evaluate_line
 from engine.values import Quantity
@@ -96,3 +97,28 @@ def test_percent_of_a_quantity() -> None:
     result = _eval("20% of 5 km")
     assert isinstance(result, Quantity)
     assert result.magnitude == pytest.approx(1000)
+
+
+# -- Live rates (see engine.currency_rates; network calls are mocked there,
+# these tests just fake a cached rate directly) --------------------------
+
+
+def test_lookup_unit_prefers_a_live_rate_over_the_static_table() -> None:
+    currency_rates._live_rates["EUR"] = 0.5  # deliberately not the static 0.92
+    dimension, factor = units.lookup_unit("EUR")
+    assert dimension == "currency"
+    assert factor == pytest.approx(0.5)
+
+
+def test_lookup_unit_falls_back_to_the_static_table_when_no_live_rate() -> None:
+    dimension, factor = units.lookup_unit("EUR")
+    assert dimension == "currency"
+    assert factor == pytest.approx(0.92)
+
+
+def test_currency_symbol_resolves_to_its_live_rate_too() -> None:
+    """'€' and 'EUR' share one live rate, keyed by the ISO code."""
+    currency_rates._live_rates["EUR"] = 0.5
+    dimension, factor = units.lookup_unit("€")
+    assert dimension == "currency"
+    assert factor == pytest.approx(0.5)

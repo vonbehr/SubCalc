@@ -14,5 +14,9 @@
     {
         "caption": "SubCalc: Toggle Results",
         "command": "subcalc_toggle_results"
+    },
+    {
+        "caption": "SubCalc: Refresh Currency Rates",
+        "command": "subcalc_refresh_currency_rates"
     }
 ]

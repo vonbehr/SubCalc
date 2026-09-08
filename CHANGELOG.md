@@ -20,6 +20,13 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   postfix currency symbols (`500$`) and a currency symbol as the
   conversion target (`500$ in €`), not just prefix (`$500`) or a 3-letter
   code (`500 USD`).
+- Optional live currency rates: `"currency_live_rates": true` fetches
+  real exchange rates from Frankfurter in the background (off by
+  default; never blocks typing; falls back to the static table when
+  disabled, unfetched, or offline), plus a `currency_api_url` override
+  and a `currency_cache_minutes` refresh interval. A new **SubCalc:
+  Refresh Currency Rates** command fetches immediately regardless of the
+  setting.
 - Date literals (`2024-01-01`), `today`, date + duration arithmetic, and
   `start to end` date differences.
 - Alternate date formats: dotted day.month.year with a 2- or 4-digit year
