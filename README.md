@@ -1,9 +1,8 @@
 # SubCalc
 
-A Sublime Text 4 package for live, per-line calculation in plain-text notes —
-in the spirit of [Soulver](https://soulver.app) and
-[NotesCalculator](https://notescalculator.com). Write a `.calc` file mixing
-prose and math; every line that evaluates to a number shows its result
+A Sublime Text 4 package for live, per-line calculation in plain-text notes.
+
+Write a `.calc` file mixing prose and math; every line that evaluates to a number shows its result
 inline as you type. Lines that aren't calculations are left alone.
 
 ## Example
