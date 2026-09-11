@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import datetime
 
+import pytest
+
 from engine.formatting import format_number, format_value
 from engine.values import DateValue, Quantity
 
@@ -24,7 +26,13 @@ def test_thousands_separator() -> None:
 
 
 def test_thousands_separator_can_be_disabled() -> None:
-    assert format_number(1234567, thousands_separator=False) == "1234567"
+    assert format_number(1234567, thousands_separator="") == "1234567"
+
+
+def test_thousands_separator_can_be_a_dot() -> None:
+    assert (
+        format_number(1234567, thousands_separator=".", decimal_separator=",") == "1.234.567"
+    )
 
 
 def test_negative_zero_normalizes_to_zero() -> None:
@@ -72,3 +80,37 @@ def test_format_value_date() -> None:
 
 def test_format_value_plain_number() -> None:
     assert format_value(12.5) == "12.5"
+
+
+def test_decimal_separator_defaults_to_dot() -> None:
+    assert format_number(1234.5) == "1,234.5"
+
+
+def test_decimal_separator_can_be_a_comma() -> None:
+    assert format_number(1234.5, thousands_separator=".", decimal_separator=",") == "1.234,5"
+
+
+def test_decimal_separator_comma_without_thousands_grouping() -> None:
+    assert (
+        format_number(1 / 3, decimal_places=2, thousands_separator="", decimal_separator=",")
+        == "0,33"
+    )
+
+
+def test_decimal_separator_comma_in_scientific_notation() -> None:
+    assert format_number(6.02e23, thousands_separator=".", decimal_separator=",") == "6,02e+23"
+
+
+def test_unknown_decimal_separator_raises() -> None:
+    with pytest.raises(ValueError):
+        format_number(1.5, decimal_separator=";")
+
+
+def test_unknown_thousands_separator_raises() -> None:
+    with pytest.raises(ValueError):
+        format_number(1234.5, thousands_separator=";")
+
+
+def test_matching_separators_raise() -> None:
+    with pytest.raises(ValueError):
+        format_number(1234.5, thousands_separator=",", decimal_separator=",")

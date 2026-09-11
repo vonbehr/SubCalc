@@ -68,7 +68,7 @@ def _is_word_hyphen(code: str, pos: int) -> bool:
     return before.isalpha() and after.isalpha()
 
 
-def looks_like_calculation(line: str) -> bool:
+def looks_like_calculation(line: str, decimal_separator: str = ".") -> bool:
     """Checks whether a line contains a signal suggesting a calculation.
 
     A line is flagged if it was likely meant as a calculation, rather than
@@ -76,6 +76,7 @@ def looks_like_calculation(line: str) -> bool:
 
     Args:
         line: A single line of ``.calc`` source.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         True if the line contains an operator, a reserved keyword, a
@@ -88,7 +89,7 @@ def looks_like_calculation(line: str) -> bool:
         return False
 
     try:
-        tokens = tokenize(code)
+        tokens = tokenize(code, decimal_separator)
     except TokenizeError:
         return True
 

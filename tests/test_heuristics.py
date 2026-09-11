@@ -116,3 +116,15 @@ def test_minus_with_space_only_before_is_still_flagged() -> None:
     Only letter-hyphen-letter with no space on either side is.
     """
     assert looks_like_calculation("total -typo") is True
+
+
+def test_prose_comma_is_not_flagged_with_comma_decimal_separator() -> None:
+    """An ordinary comma-separated sentence still isn't a calculation."""
+    assert (
+        looks_like_calculation("rent, utilities, and groceries", decimal_separator=",")
+        is False
+    )
+
+
+def test_assignment_with_comma_decimal_is_flagged() -> None:
+    assert looks_like_calculation("rent = ", decimal_separator=",") is True

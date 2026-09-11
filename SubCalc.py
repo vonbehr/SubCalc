@@ -33,17 +33,23 @@ _listeners: dict[int, SubcalcListener] = {}
 _currency_refresh_in_flight = False
 
 
-def _display_settings() -> tuple[int, bool, str]:
-    """Reads the decimal-places/thousands-separator/rounding-mode settings.
+def _display_settings() -> tuple[int, str, str, str]:
+    """Reads the decimal-places/thousands-separator/rounding-mode/decimal-separator settings.
 
     Returns:
-        A ``(decimal_places, thousands_separator, rounding_mode)`` tuple.
+        A ``(decimal_places, thousands_separator, rounding_mode,
+        decimal_separator)`` tuple.
     """
     settings = sublime.load_settings(_SETTINGS_FILE)
+    thousands_separator = settings.get("thousands_separator", ",")
+    if isinstance(thousands_separator, bool):
+        # Older settings files stored this as an on/off switch.
+        thousands_separator = "," if thousands_separator else ""
     return (
         settings.get("decimal_places", 6),
-        settings.get("thousands_separator", True),
+        thousands_separator,
         settings.get("rounding_mode", "half_even"),
+        settings.get("decimal_separator", "."),
     )
 
 
@@ -125,6 +131,7 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
         self._outcomes: list[LineOutcome] = []
         self._variables: dict[str, Value] = {}
         self._labels: dict[str, Value] = {}
+        self._active_rows: set[int] = set()
         _listeners[view.id()] = self
 
     @classmethod
@@ -173,9 +180,13 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
             return
         view = self.view
 
+        decimal_places, thousands_separator, rounding_mode, decimal_separator = (
+            _display_settings()
+        )
+
         line_regions = view.lines(sublime.Region(0, view.size()))
         lines = [view.substr(region) for region in line_regions]
-        self._outcomes, env = evaluate_buffer_with_env(lines)
+        self._outcomes, env = evaluate_buffer_with_env(lines, decimal_separator)
         self._variables = env.variables
         self._labels = env.labels
         _maybe_refresh_currency_rates()
@@ -188,18 +199,31 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
 
         settings = sublime.load_settings(_SETTINGS_FILE)
         prefix = settings.get("result_prefix", "  ⟶ ")
-        decimal_places, thousands_separator, rounding_mode = _display_settings()
         result_color = view.style_for_scope(_RESULT_SCOPE)["foreground"]
         error_color = view.style_for_scope(_ERROR_SCOPE)["foreground"]
+
+        # Lines the caret is currently on don't get an error indicator: an
+        # in-progress edit (e.g. "rent +", not yet finished) looks like a
+        # broken calculation on every keystroke, and flashing that at the
+        # user while they're still typing it is more disruptive than
+        # helpful. It reappears via on_selection_modified_async as soon as
+        # the caret leaves the line -- notably, when RETURN is pressed.
+        active_rows = {view.rowcol(sel.b)[0] for sel in view.sel()}
 
         result_phantoms = []
         error_phantoms = []
         error_regions = []
-        for region, line_text, outcome in zip(line_regions, lines, self._outcomes):
+        for row, (region, line_text, outcome) in enumerate(
+            zip(line_regions, lines, self._outcomes)
+        ):
             end_point = sublime.Region(region.end(), region.end())
             if outcome.value is not None:
                 text = format_value(
-                    outcome.value, decimal_places, thousands_separator, rounding_mode
+                    outcome.value,
+                    decimal_places,
+                    thousands_separator,
+                    rounding_mode,
+                    decimal_separator,
                 )
                 html = (
                     f'<body style="margin:0"><span style="color:{result_color}">'
@@ -208,7 +232,11 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
                 result_phantoms.append(
                     sublime.Phantom(end_point, html, sublime.PhantomLayout.INLINE)
                 )
-            elif outcome.error is not None and looks_like_calculation(line_text):
+            elif (
+                outcome.error is not None
+                and row not in active_rows
+                and looks_like_calculation(line_text, decimal_separator)
+            ):
                 html = (
                     f'<body style="margin:0"><span style="color:{error_color}">'
                     f"  ⚠ {outcome.error}</span></body>"
@@ -265,8 +293,12 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
 
         if name is None or value is None:
             return
-        decimal_places, thousands_separator, rounding_mode = _display_settings()
-        text = format_value(value, decimal_places, thousands_separator, rounding_mode)
+        decimal_places, thousands_separator, rounding_mode, decimal_separator = (
+            _display_settings()
+        )
+        text = format_value(
+            value, decimal_places, thousands_separator, rounding_mode, decimal_separator
+        )
         view.show_popup(f"<b>{name}</b> = {text}", location=point, max_width=400)
 
     def on_query_completions(
@@ -300,8 +332,14 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
         return sublime.CompletionList(items)
 
     def on_selection_modified_async(self) -> None:
-        """Shows the sum/average of the selected lines' results in the status bar."""
+        """Redraws on caret-row change, and shows the status bar's selection sum/average."""
         view = self.view
+
+        active_rows = {view.rowcol(sel.b)[0] for sel in view.sel()}
+        if active_rows != self._active_rows:
+            self._active_rows = active_rows
+            self.refresh()
+
         selections = [sel for sel in view.sel() if not sel.empty()]
         if not selections or not self._outcomes:
             view.erase_status(_STATUS_KEY)
@@ -322,10 +360,12 @@ class SubcalcListener(sublime_plugin.ViewEventListener):
             view.erase_status(_STATUS_KEY)
             return
 
-        decimal_places, thousands_separator, rounding_mode = _display_settings()
+        decimal_places, thousands_separator, rounding_mode, decimal_separator = (
+            _display_settings()
+        )
         total = sum(values)
         average = total / len(values)
-        display = (decimal_places, thousands_separator, rounding_mode)
+        display = (decimal_places, thousands_separator, rounding_mode, decimal_separator)
         total_text = format_number(total, *display)
         average_text = format_number(average, *display)
         view.set_status(
@@ -353,10 +393,18 @@ class SubcalcCopyAllResultsCommand(sublime_plugin.TextCommand):
         Args:
             edit: Unused; this command only reads the buffer.
         """
-        outcomes, _ = evaluate_buffer_with_env(_buffer_lines(self.view))
-        decimal_places, thousands_separator, rounding_mode = _display_settings()
+        decimal_places, thousands_separator, rounding_mode, decimal_separator = (
+            _display_settings()
+        )
+        outcomes, _ = evaluate_buffer_with_env(_buffer_lines(self.view), decimal_separator)
         lines = [
-            format_value(outcome.value, decimal_places, thousands_separator, rounding_mode)
+            format_value(
+                outcome.value,
+                decimal_places,
+                thousands_separator,
+                rounding_mode,
+                decimal_separator,
+            )
             for outcome in outcomes
             if outcome.value is not None
         ]
@@ -373,13 +421,17 @@ class SubcalcCopyLastResultCommand(sublime_plugin.TextCommand):
         Args:
             edit: Unused; this command only reads the buffer.
         """
-        outcomes, _ = evaluate_buffer_with_env(_buffer_lines(self.view))
+        decimal_places, thousands_separator, rounding_mode, decimal_separator = (
+            _display_settings()
+        )
+        outcomes, _ = evaluate_buffer_with_env(_buffer_lines(self.view), decimal_separator)
         results = [outcome.value for outcome in outcomes if outcome.value is not None]
         if not results:
             sublime.status_message("SubCalc: no result to copy")
             return
-        decimal_places, thousands_separator, rounding_mode = _display_settings()
-        text = format_value(results[-1], decimal_places, thousands_separator, rounding_mode)
+        text = format_value(
+            results[-1], decimal_places, thousands_separator, rounding_mode, decimal_separator
+        )
         sublime.set_clipboard(text)
         sublime.status_message(f"SubCalc: copied {text}")
 

@@ -8,6 +8,7 @@ from engine.errors import ParseError
 from engine.parser import (
     Assign,
     BinOp,
+    FunctionCall,
     LineRef,
     Number,
     Percent,
@@ -81,3 +82,21 @@ def test_prose_line_is_a_parse_error() -> None:
     """Ordinary text with no operators between words fails to parse."""
     with pytest.raises(ParseError):
         parse_line("buy milk and eggs")
+
+
+def test_comma_decimal_separator_parses_comma_as_decimal_point() -> None:
+    """With decimal_separator=",", "100,00" is 100.0, not 10000."""
+    node = parse_line("100,00", decimal_separator=",")
+    assert node == Number(100.0)
+
+
+def test_comma_decimal_separator_groups_the_integer_part_with_a_dot() -> None:
+    """With decimal_separator=",", "." may still group the integer part."""
+    node = parse_line("1.234,5", decimal_separator=",")
+    assert node == Number(1234.5)
+
+
+def test_comma_decimal_separator_uses_semicolon_for_function_arguments() -> None:
+    """With decimal_separator=",", function args are separated by ";"."""
+    node = parse_line("max(1,5; 2,5)", decimal_separator=",")
+    assert node == FunctionCall("max", [Number(1.5), Number(2.5)])

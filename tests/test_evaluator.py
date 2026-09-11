@@ -124,3 +124,18 @@ def test_complex_result_from_exponentiation_is_reported_as_eval_error() -> None:
 def test_zero_to_negative_power_is_eval_error() -> None:
     with pytest.raises(EvalError):
         _eval("0 ^ -1")
+
+
+# -- Configurable decimal separator -----------------------------------------
+
+
+def test_comma_decimal_separator_end_to_end() -> None:
+    """A comma-decimal buffer parses "100,00" as 100, not 10000."""
+    env = Environment()
+    assert evaluate_line("Credit = 100,00", env, decimal_separator=",") == 100.0
+
+
+def test_comma_decimal_separator_supports_function_calls() -> None:
+    env = Environment()
+    result = evaluate_line("round(pi * 2; 2)", env, decimal_separator=",")
+    assert result == pytest.approx(6.28)

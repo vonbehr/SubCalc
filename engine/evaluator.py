@@ -430,13 +430,14 @@ def _eval_binop(node: BinOp, env: Environment) -> Value:
     raise EvalError(f"Unknown operator: {node.op}")
 
 
-def evaluate_line(line: str, env: Environment) -> Value | None:
+def evaluate_line(line: str, env: Environment, decimal_separator: str = ".") -> Value | None:
     """Evaluates a single line, updating ``env`` with any assignment or label.
 
     Args:
         line: A single line of ``.calc`` source.
         env: The environment to evaluate against and, for assignment or
             labeled lines, update in place.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         The line's result, or ``None`` if the line is blank or comment-only.
@@ -446,7 +447,7 @@ def evaluate_line(line: str, env: Environment) -> Value | None:
             (see :mod:`engine.errors`). Callers processing a whole buffer
             should catch this to treat the line as ordinary prose.
     """
-    node = parse_line(line)
+    node = parse_line(line, decimal_separator)
     return _eval_line_node(node, env)
 
 
@@ -477,11 +478,14 @@ class LineOutcome:
     error: str | None
 
 
-def evaluate_buffer_with_env(lines: list[str]) -> tuple[list[LineOutcome], Environment]:
+def evaluate_buffer_with_env(
+    lines: list[str], decimal_separator: str = "."
+) -> tuple[list[LineOutcome], Environment]:
     """Evaluates every line of a buffer, also returning the final environment.
 
     Args:
         lines: The buffer's lines, in order, without trailing newlines.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         A ``(outcomes, environment)`` pair: one :class:`LineOutcome` per
@@ -494,7 +498,7 @@ def evaluate_buffer_with_env(lines: list[str]) -> tuple[list[LineOutcome], Envir
     for line in lines:
         error = None
         try:
-            value = evaluate_line(line, env)
+            value = evaluate_line(line, env, decimal_separator)
         except SubCalcError as exc:
             value = None
             error = str(exc)
@@ -505,19 +509,22 @@ def evaluate_buffer_with_env(lines: list[str]) -> tuple[list[LineOutcome], Envir
     return outcomes, env
 
 
-def evaluate_buffer_verbose(lines: list[str]) -> list[LineOutcome]:
+def evaluate_buffer_verbose(
+    lines: list[str], decimal_separator: str = "."
+) -> list[LineOutcome]:
     """Evaluates every line of a buffer, keeping each failure's error message.
 
     Args:
         lines: The buffer's lines, in order, without trailing newlines.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         One :class:`LineOutcome` per input line.
     """
-    return evaluate_buffer_with_env(lines)[0]
+    return evaluate_buffer_with_env(lines, decimal_separator)[0]
 
 
-def evaluate_buffer(lines: list[str]) -> list[Value | None]:
+def evaluate_buffer(lines: list[str], decimal_separator: str = ".") -> list[Value | None]:
     """Evaluates every line of a buffer in order, top to bottom.
 
     Lines that are blank, prose, or fail to evaluate for any reason are
@@ -526,8 +533,9 @@ def evaluate_buffer(lines: list[str]) -> list[Value | None]:
 
     Args:
         lines: The buffer's lines, in order, without trailing newlines.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         One result per input line, ``None`` where the line had no result.
     """
-    return [outcome.value for outcome in evaluate_buffer_verbose(lines)]
+    return [outcome.value for outcome in evaluate_buffer_verbose(lines, decimal_separator)]

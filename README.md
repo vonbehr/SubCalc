@@ -44,7 +44,10 @@ dates and times, an invoice -- live in [`examples/`](examples).
   (a number directly, with no space, against a parenthesis or a variable)
   are implicit multiplication.
 - **Numbers**: thousands separators (`1,234` or `1_234`), and scientific
-  notation (`1e6`, `2.5e-3`).
+  notation (`1e6`, `2.5e-3`). With `decimal_separator` set to `,` (see
+  below), the decimal point and thousands separator swap (`1.234,5`), and
+  function-call arguments are separated with `;` instead of `,` (e.g.
+  `round(pi * 2; 2)`), since `,` is now a NUMBER's decimal point.
 - **Variables**: `name = expression`, referenced by name on later lines.
   Variables are only visible on lines *after* their assignment — no forward
   references, matching how a spreadsheet or notes app reads top to bottom.
@@ -173,7 +176,8 @@ extension).
 
 Settings (`Calc.sublime-settings`, accessible via
 **Preferences > Package Settings**) let you tune the decimal precision,
-thousands-separator grouping, result prefix, rounding mode
+thousands separator (`,`/`.`/off) and decimal separator (`.`/`,`, must
+differ from each other), result prefix, rounding mode
 (`half_even`/`half_up`/`floor`/`ceil`), debounce delay, and live currency
 rates (see above).
 

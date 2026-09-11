@@ -14,10 +14,14 @@ Grammar (lowest to highest precedence)::
     power      := unary ("^" power)?
     unary      := "-" unary | primary
     primary    := NUMBER unit_name? | DATE | TIME | CURRENCY NUMBER | "#" IDENT
-                | IDENT "(" (additive ("," additive)*)? ")"
+                | IDENT "(" (additive (ARGSEP additive)*)? ")"
                 | IDENT | "(" additive ")"
     unit_name  := IDENT | CURRENCY   -- a unit word (e.g. "km") or a currency
                                         symbol (e.g. "€"), pre- or postfix
+
+ARGSEP is "," normally, or ";" when decimal_separator is "," (see
+:data:`engine.tokenizer.ARG_SEPARATORS`) -- "," can't separate arguments
+and also be a NUMBER's decimal point.
 
 ``of`` is only consumed as the "of" keyword when the left-hand side is a
 percentage; otherwise it is left for the caller, which then fails to find a
@@ -40,7 +44,7 @@ from typing import Union
 
 from . import dates, units
 from .errors import ParseError
-from .tokenizer import Token, tokenize
+from .tokenizer import ARG_SEPARATORS, Token, tokenize
 
 _LINE_REF_PREFIX = "line"
 _FUNCTIONS = frozenset({"sqrt", "abs", "round", "floor", "ceil", "min", "max"})
@@ -213,9 +217,11 @@ Node = Union[
 class _Parser:
     """Stateful recursive-descent parser over a fixed token list."""
 
-    def __init__(self, tokens: list[Token]) -> None:
+    def __init__(self, tokens: list[Token], decimal_separator: str = ".") -> None:
         self._tokens = tokens
         self._pos = 0
+        self._decimal_separator = decimal_separator
+        self._arg_separator = ARG_SEPARATORS[decimal_separator]
 
     def _peek(self) -> Token:
         return self._tokens[self._pos]
@@ -380,7 +386,8 @@ class _Parser:
 
         if token.type == "NUMBER":
             self._advance()
-            return self._maybe_attach_unit(Number(_parse_number_literal(token.value)))
+            value = _parse_number_literal(token.value, self._decimal_separator)
+            return self._maybe_attach_unit(Number(value))
 
         if token.type == "DATE":
             self._advance()
@@ -398,7 +405,8 @@ class _Parser:
                     f"Expected a number after {token.value!r} at position {number_token.pos}"
                 )
             self._advance()
-            return Quantity(Number(_parse_number_literal(number_token.value)), token.value)
+            value = _parse_number_literal(number_token.value, self._decimal_separator)
+            return Quantity(Number(value), token.value)
 
         if token.type == "OP" and token.value == "#":
             self._advance()
@@ -447,7 +455,7 @@ class _Parser:
         args: list[Node] = []
         if not self._at_op(")"):
             args.append(self._parse_additive())
-            while self._at_op(","):
+            while self._at_op(self._arg_separator):
                 self._advance()
                 args.append(self._parse_additive())
         if not self._at_op(")"):
@@ -466,17 +474,23 @@ class _Parser:
         return None
 
 
-def _parse_number_literal(text: str) -> float:
+def _parse_number_literal(text: str, decimal_separator: str = ".") -> float:
     """Converts a NUMBER token's raw text into a float.
 
     Args:
         text: The token's raw source text, e.g. ``"1,000_000.5"`` or
-            ``"2.5e-3"``.
+            ``"2.5e-3"`` (or, with a "," decimal_separator, ``"1.000_000,5"``).
+        decimal_separator: The symbol :func:`engine.tokenizer.tokenize`
+            treated as the decimal point when producing this token.
 
     Returns:
         The parsed value.
     """
-    return float(text.replace(",", "").replace("_", ""))
+    grouping_separator = "," if decimal_separator == "." else "."
+    text = text.replace(grouping_separator, "").replace("_", "")
+    if decimal_separator == ",":
+        text = text.replace(",", ".")
+    return float(text)
 
 
 def _parse_date_literal(text: str) -> datetime.date:
@@ -516,12 +530,16 @@ def _parse_time_literal(text: str) -> datetime.time:
         raise ParseError(f"Invalid time {text!r}: {exc}") from exc
 
 
-def parse(tokens: list[Token]) -> Node:
+def parse(tokens: list[Token], decimal_separator: str = ".") -> Node:
     """Parses a full token stream for one line into an AST.
 
     Args:
         tokens: The token stream produced by :func:`engine.tokenizer.tokenize`,
             including the terminating ``EOF`` token.
+        decimal_separator: The decimal separator ``tokens`` was produced
+            with (see :func:`engine.tokenizer.tokenize`) -- used to read
+            back NUMBER literals and to know which symbol separates
+            function-call arguments.
 
     Returns:
         The root AST node for the line -- an :class:`Assign` for assignment
@@ -531,14 +549,15 @@ def parse(tokens: list[Token]) -> Node:
         ParseError: If the tokens do not form a valid expression or
             assignment, or if trailing tokens remain after a valid one.
     """
-    return _Parser(tokens).parse_line()
+    return _Parser(tokens, decimal_separator).parse_line()
 
 
-def parse_line(line: str) -> Node:
+def parse_line(line: str, decimal_separator: str = ".") -> Node:
     """Convenience wrapper that tokenizes and parses a raw source line.
 
     Args:
         line: A single line of ``.calc`` source.
+        decimal_separator: See :func:`engine.tokenizer.tokenize`.
 
     Returns:
         The root AST node for the line, as returned by :func:`parse`.
@@ -548,4 +567,4 @@ def parse_line(line: str) -> Node:
         ParseError: If the tokens do not form a valid expression or
             assignment.
     """
-    return parse(tokenize(line))
+    return parse(tokenize(line, decimal_separator), decimal_separator)
