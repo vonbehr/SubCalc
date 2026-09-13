@@ -1,18 +1,18 @@
 {
     // Maximum number of decimal places shown for computed results.
-    "decimal_places": 6,
+    "decimal_places": 2,
 
     // The symbol used to group the integer part of large results: ","
     // (the default) or ".", or "" to disable grouping. Must differ from
     // decimal_separator.
-    "thousands_separator": ",",
+    "thousands_separator": ".",
 
     // The symbol used for the decimal point, both in typed numbers and in
     // displayed results: "." (the default) or ",". Must differ from
     // thousands_separator. When set to ",", function-call arguments are
     // separated with ";" instead of "," (e.g. "round(pi * 2; 2)"), since
     // "," is now a NUMBER's decimal point.
-    "decimal_separator": ".",
+    "decimal_separator": ",",
 
     // Text inserted before each inline result.
     "result_prefix": "  ⟶ ",
@@ -32,7 +32,7 @@
     // only ever to fetch aggregate exchange rates, never anything from
     // your files. Run "SubCalc: Refresh Currency Rates" to fetch once
     // regardless of this setting.
-    "currency_live_rates": false,
+    "currency_live_rates": true,
 
     // The exchange-rate API to fetch from when currency_live_rates is on.
     // Must return JSON shaped like Frankfurter's (https://frankfurter.dev),
