@@ -98,6 +98,35 @@ dates and times, an invoice -- live in [`examples/`](examples).
   heuristic, not the engine's actual behavior — see
   `engine/heuristics.py`.
 
+## Customizing colors
+
+SubCalc doesn't ship a color scheme -- it just adds standard TextMate scopes
+suffixed with `.calc` to the syntax, so highlighting falls back to whatever
+your current color scheme already defines for the base scope (`constant.numeric`,
+`keyword.operator`, `variable.other`, `comment.line`, etc.).
+
+To style the SubCalc-specific scopes distinctly, add rules for them to your
+own color scheme via **Preferences > Customize Color Scheme…** (this creates
+an override file in `Packages/User/` that layers on top of your base scheme
+without replacing it):
+
+```json
+{
+    "rules": [
+        { "scope": "constant.other.date.calc, constant.other.time.calc", "foreground": "#e5c07b" },
+        { "scope": "support.function.calc", "foreground": "#61afef", "font_style": "bold" },
+        { "scope": "keyword.other.calc, keyword.operator.word.calc", "foreground": "#c678dd" },
+        { "scope": "constant.language.calc", "foreground": "#d19a66" },
+        { "scope": "variable.other.label.calc", "foreground": "#56b6c2", "font_style": "italic" },
+        { "scope": "variable.other.assignment.calc", "foreground": "#e06c75", "font_style": "bold" },
+        { "scope": "keyword.operator.unit.calc", "foreground": "#98c379" }
+    ]
+}
+```
+
+See [Sublime's color scheme docs](https://www.sublimetext.com/docs/color_schemes.html#customization)
+for the full mechanics of per-user overrides.
+
 ## Commands
 
 Available from the command palette (and `Edit > SubCalc` in the menu):
