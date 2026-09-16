@@ -13,6 +13,29 @@
         ]
     },
     {
+        "id": "preferences",
+        "children": [
+            {
+                "id": "package-settings",
+                "children": [
+                    {
+                        "caption": "SubCalc",
+                        "children": [
+                            {
+                                "caption": "Settings",
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/SubCalc/Calc.sublime-settings",
+                                    "default": "// Settings in here override those in \"Calc.sublime-settings\",\n// and are added to your \"User\" folder to persist across upgrades.\n{\n\t$0\n}\n"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
         "id": "edit",
         "children": [
             {
