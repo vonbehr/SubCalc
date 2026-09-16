@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Exclude dev-only files from Package Control releases
+/.github export-ignore
+/.pre-commit-config.yaml export-ignore
+/.python-version export-ignore
+/CONTRIBUTING.md export-ignore
+/pyproject.toml export-ignore
+/tests export-ignore
