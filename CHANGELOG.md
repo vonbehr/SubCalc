@@ -3,6 +3,34 @@
 All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-09-17
+
+### Added
+
+- Configurable `decimal_separator` and `thousands_separator` settings,
+  controlling both display and input parsing (including which symbol
+  separates function-call arguments when a comma is used as the decimal
+  point).
+- A `Preferences > Package Settings > SubCalc > Settings` menu entry and
+  command palette command, opening default and user settings side by
+  side.
+
+### Changed
+
+- Removed the bundled `Calc.sublime-color-scheme` overlay in favor of
+  documenting the `.calc`-suffixed scopes in the README, with a
+  copy-paste snippet for adding overrides to any existing color scheme.
+
+### Fixed
+
+- Stopped flashing an error phantom on the line the caret is currently
+  on; the indicator now reappears once the caret leaves the line.
+
+### Internal
+
+- Excluded tests, CI config, and tooling files from Package Control
+  releases via `.gitattributes` `export-ignore`.
+
 ## [1.0.0] - 2026-09-08
 
 First public release, submitted to Package Control.
