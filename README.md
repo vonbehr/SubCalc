@@ -20,12 +20,12 @@ A quick tour of the rest -- functions, units and currency, dates and
 times, and the `total` aggregate:
 
 ```
-sqrt(2)                     ⟶ 1.414214
-round(pi * 2, 2)            ⟶ 6.28
-max(12, 7, 20)              ⟶ 20
+sqrt(2)                     ⟶ 1,41
+round(pi * 2; 2)            ⟶ 6,28
+max(12; 7; 20)              ⟶ 20
 
-5 km + 200 m                ⟶ 5.2 km
-45 USD + 12.50 USD in EUR   ⟶ 62.5 EUR
+5 km + 200 m                ⟶ 5,2 km
+45 USD + 12,50 USD          ⟶ 57,5 USD
 
 2026-01-01 to 2026-06-01    ⟶ 151 days
 14:30 + 90 min              ⟶ 16:00
@@ -35,6 +35,10 @@ max(12, 7, 20)              ⟶ 20
 total                       ⟶ 30
 ```
 
+(Shown with the default settings: `,` as the decimal point, `.` to group
+thousands, and 2 decimal places -- see **Numbers** below and
+[`Calc.sublime-settings`](Calc.sublime-settings) to change any of these.)
+
 More worked examples -- functions and math, unit conversion, currency,
 dates and times, an invoice -- live in [`examples/`](examples).
 
@@ -43,11 +47,13 @@ dates and times, an invoice -- live in [`examples/`](examples).
 - **Arithmetic**: `+ - * / ^ ( )`, standard precedence. `2(3 + 4)` and `3x`
   (a number directly, with no space, against a parenthesis or a variable)
   are implicit multiplication.
-- **Numbers**: thousands separators (`1,234` or `1_234`), and scientific
-  notation (`1e6`, `2.5e-3`). With `decimal_separator` set to `,` (see
-  below), the decimal point and thousands separator swap (`1.234,5`), and
-  function-call arguments are separated with `;` instead of `,` (e.g.
-  `round(pi * 2; 2)`), since `,` is now a NUMBER's decimal point.
+- **Numbers**: thousands separators (`1.234` or `1_234`), and scientific
+  notation (`1e6`, `2.5e-3`). By default the decimal point is `,` and the
+  thousands separator is `.` (`1.234,5`), so function-call arguments are
+  separated with `;` instead of `,` (e.g. `round(pi * 2; 2)`), since `,`
+  is now a NUMBER's decimal point. Set `decimal_separator` to `.` and
+  `thousands_separator` to `,` for the `1,234.5` / `,`-argument convention
+  instead.
 - **Variables**: `name = expression`, referenced by name on later lines.
   Variables are only visible on lines *after* their assignment — no forward
   references, matching how a spreadsheet or notes app reads top to bottom.
@@ -63,7 +69,7 @@ dates and times, an invoice -- live in [`examples/`](examples).
   - `A * 20%` / `A / 20%` treats `20%` as a plain fraction.
   - `20% of A` is always `(20/100) * A`.
 - **Functions**: `sqrt`, `abs`, `round` (1 or 2 args), `floor`, `ceil`,
-  `min`, `max` (2+ args), e.g. `round(sqrt(2), 4)`.
+  `min`, `max` (2+ args), e.g. `round(sqrt(2); 4)`.
 - **Constants**: `pi`, `e` — shadowed if you assign a variable of the same
   name.
 - **Aggregates**: a line containing only `total` (or `sum`) adds up every
@@ -73,11 +79,11 @@ dates and times, an invoice -- live in [`examples/`](examples).
   names instead — the aggregate only fires on a line by itself.
 - **Units of measure**: attach a unit to a number (`5 km`, `3 kg`, `2 hours`)
   and arithmetic between same-dimension quantities converts automatically:
-  `5 km + 200 m` is `5.2 km`. Convert or tag explicitly with `in`/`as`:
+  `5 km + 200 m` is `5,2 km`. Convert or tag explicitly with `in`/`as`:
   `5 km in miles`, `3 as USD`. Supported dimensions are length, mass, time,
   and currency (`$`, `€`, `£`, `¥`, or a 3-letter code like `USD`) — currency
-  rates come from a small static table by default, or optionally a live
-  lookup (off by default; see **Live currency rates** below).
+  rates are fetched live by default, falling back to a small static table
+  if that's turned off or unavailable (see **Currency rates** below).
 - **Dates**: a date literal can be written as ISO (`2024-01-01`), dotted
   day.month.year — the European convention — with a 2- or 4-digit year
   (`05.07.2026`, `5.7.2026`, `5.7.26`), or German day. Month year with a
@@ -137,40 +143,54 @@ Available from the command palette (and `Edit > SubCalc` in the menu):
 - **SubCalc: Toggle Results** — hides or shows inline result phantoms for
   the current view.
 - **SubCalc: Refresh Currency Rates** — fetches live exchange rates now
-  (see **Live currency rates** below); works even if that setting is off.
+  (see **Currency rates** below); works even if that setting is off.
 
 Hovering a variable, `#label`, or `lineN` shows a popup with its current
 value, and they're all offered as autocomplete suggestions, alongside
 function and keyword names. Selecting more than one line's worth of text
 shows that selection's total and average in the status bar.
 
-## Live currency rates (optional)
+## Currency rates
 
-By default, currency conversion (`$5 in EUR`, etc.) uses a small static
-table baked into the package, which only gets updated when the package
-does. Setting `"currency_live_rates": true` in `Calc.sublime-settings`
-switches to real exchange rates instead: SubCalc fetches them in the
-background from [Frankfurter](https://frankfurter.dev) (a free,
-no-API-key service backed by European Central Bank reference rates),
-caching the result for `currency_cache_minutes` (an hour, by default)
-before fetching again.
+By default, currency conversion (`$5 in EUR`, etc.) fetches real exchange
+rates in the background from [Frankfurter](https://frankfurter.dev) (a
+free, no-API-key service backed by European Central Bank reference
+rates), caching the result for `currency_cache_minutes` (an hour, by
+default) before fetching again. Set `"currency_live_rates": false` in
+`Calc.sublime-settings` to use a small static table baked into the
+package instead, which only gets updated when the package does.
 
-This is the *only* thing in SubCalc that touches the network, it's off
-unless you turn it on, and it only ever requests exchange rates — never
-anything from your files. A fetch never blocks typing: it runs in the
-background, and until it completes (or if it fails, e.g. you're offline)
-SubCalc keeps using the last rates it has, static or previously fetched.
-Run **SubCalc: Refresh Currency Rates** any time to fetch immediately,
-regardless of the setting.
+This is the *only* thing in SubCalc that touches the network, and it only
+ever requests exchange rates — never anything from your files. A fetch
+never blocks typing: it runs in the background, and until it completes
+(or if it fails, e.g. you're offline) SubCalc keeps using the last rates
+it has, live or static. Run **SubCalc: Refresh Currency Rates** any time
+to fetch immediately, regardless of the setting.
 
 `currency_api_url` points at a different endpoint if you'd rather use
 another provider or self-host one — it just needs to return JSON shaped
 like `{"rates": {"EUR": 0.92, "GBP": 0.79, ...}}`, expressed relative to
 USD.
 
-## Installing locally (not yet on Package Control)
+## Installing
 
-Symlink this repo into Sublime Text's Packages directory.
+Open the command palette, run **Package Control: Install Package**, and
+search for **SubCalc**.
+
+Once installed, open the command palette and run **SubCalc: New
+Calculation** (or create/open any file with a `.calc` extension).
+
+Settings (`Calc.sublime-settings`, accessible via
+**Preferences > Package Settings**) let you tune the decimal precision,
+thousands separator (`,`/`.`/off) and decimal separator (`.`/`,`, must
+differ from each other), result prefix, rounding mode
+(`half_even`/`half_up`/`floor`/`ceil`), debounce delay, and live currency
+rates (see above).
+
+### Installing from source
+
+To track this repo directly (e.g. for development, or to try changes
+before release), symlink it into Sublime Text's Packages directory instead.
 
 **macOS**
 
@@ -197,24 +217,13 @@ mklink /D "%APPDATA%\Sublime Text\Packages\SubCalc" "C:\path\to\this\repo"
 ```
 
 A symlink is required (rather than a plain copy) so that Sublime Text picks
-up further changes to this repo without reinstalling.
-
-Then, in Sublime Text, open the command palette and run
-**SubCalc: New Calculation** (or create/open any file with a `.calc`
-extension).
-
-Settings (`Calc.sublime-settings`, accessible via
-**Preferences > Package Settings**) let you tune the decimal precision,
-thousands separator (`,`/`.`/off) and decimal separator (`.`/`,`, must
-differ from each other), result prefix, rounding mode
-(`half_even`/`half_up`/`floor`/`ceil`), debounce delay, and live currency
-rates (see above).
+up further changes to this repo without reinstalling. Then use it the same
+way as above.
 
 ## Development
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for dev setup (tests, lint, type
-checks, pre-commit) and style guidelines, and
-[`ROADMAP.md`](ROADMAP.md) for planned work.
+checks, pre-commit) and style guidelines.
 
 The calculation engine (`engine/`) is pure Python with no dependency on
 Sublime's `sublime`/`sublime_plugin` modules, so it's fully testable outside
